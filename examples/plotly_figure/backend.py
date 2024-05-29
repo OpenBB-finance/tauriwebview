@@ -4,6 +4,7 @@ import json
 import sys
 from multiprocessing import current_process
 from pathlib import Path
+from typing import Optional, Union
 
 import plotly.graph_objects as go
 from pywry import PyWry
@@ -42,7 +43,9 @@ class Backend(PyWry):
         self.max_retries = 0  # pylint: disable=W0201
         raise FileNotFoundError(f"Plotly HTML file not found at {self.plotly_html}.")
 
-    def send_figure(self, fig: go.Figure):
+    def send_figure(
+        self, fig: go.Figure, export_image: Optional[Union[str, Path]] = ""
+    ):
         """Send a Plotly figure to the backend.
 
         Parameters
@@ -52,13 +55,14 @@ class Backend(PyWry):
         """
         self.check_backend()
         title = fig.layout.title.text if fig.layout.title else "Plotly Figure"
-
         json_data = json.loads(fig.to_json())
+        export_image = Path(export_image).resolve() if export_image else None
 
         outgoing = dict(
             html=self.get_plotly_html(),
             json_data=json_data,
             title=title,
+            export_image=export_image,
         )
         self.send_outgoing(outgoing)
 
