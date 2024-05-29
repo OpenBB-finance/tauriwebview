@@ -29,7 +29,9 @@ class PyWryFigure(go.Figure):
         if pywry_backend().isatty:
             try:
                 # We send the figure to the backend to be displayed
-                return pywry_backend().send_figure(self)
+                return pywry_backend().send_figure(
+                    self, export_image=kwargs.pop("filepath", None)
+                )
             except Exception:
                 pass
 
@@ -85,7 +87,7 @@ class Main:
         while True:
             await asyncio.sleep(1)
 
-    def run(self):
+    def run(self, interactive_export=False):
         fig = PyWryFigure()
         fig.add_scatter(y=np.random.randn(500), mode="markers")
         fig.add_scatter(y=np.random.randn(500) + 1, mode="markers")
@@ -101,16 +103,18 @@ class Main:
 
         # We start the backend in interactive mode for displaying the figure.
         pywry_backend().start()
-        fig.show()
+        filepath = "interactive_plotly_image.png" if interactive_export else None
+        fig.show(filepath=filepath)
 
         pywry_backend().loop.run_until_complete(self.main_loop())
 
 
 if __name__ == "__main__":
     try:
+        interactive_export = "--interactive-export" in sys.argv[1:]
         # PyWry creates a new thread for the backend,
         # so we need to run the main loop in the main thread.
-        asyncio.create_task(Main().run())
+        asyncio.create_task(Main().run(interactive_export))
     except KeyboardInterrupt:
         print("Keyboard interrupt detected. Exiting...")
         sys.exit(0)
